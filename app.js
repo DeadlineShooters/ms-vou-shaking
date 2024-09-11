@@ -7,6 +7,7 @@ import exchangeRoutes from './routes/exchangeRoutes.js';
 import sendItemRoutes from './routes/sendItemRoutes.js';
 import playRoutes from './routes/playRoutes.js'; 
 import shareRoutes from './routes/shareRoutes.js';  // Import the share route
+import inventoryRoutes from './routes/inventoryRoutes.js';
 import cors from "cors";  // Import the cors package
 const app = express();
 app.use(bodyParser.json());  // Parse JSON bodies
@@ -17,6 +18,7 @@ app.use('/api/sendItem', sendItemRoutes);
 app.use('/api', shareRoutes);  // Add the new route for sharing on Facebook
 app.use('/api', playRoutes);  // Add the play routes
 app.use("/api", playerRoutes);
+app.use("/api", inventoryRoutes);
 // Default route for testing the server
 app.get("/", (req, res) => {
   res.send("Server is running securely on HTTPS!");
