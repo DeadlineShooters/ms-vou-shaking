@@ -1,50 +1,47 @@
-// controllers/shakeController.js
-import { db } from '../config/firebase.js';
-import Player from '../models/Player.js';
+import FirebaseService from "../services/FirebaseService.js";  // Import Firebase service
+import { getDoc } from "firebase/firestore";  // Import Firestore functions for handling documents
 
-export const startShake = async (req, res) => {
-  const { userId } = req.body;
+const firebaseService = new FirebaseService();  // Initialize FirebaseService
 
-  try {
-    const player = new Player(userId);
-    const playerInfo = await player.getPlayerInfo();
-
-    if (playerInfo.remainingPlays > 0) {
-      // Randomly pick an item
-      const items = ["Sword", "Shield", "Potion"]; // Replace with your items
-      const randomItem = items[Math.floor(Math.random() * items.length)];
-
-      // Update remaining plays
-      await player.updateRemainingPlays(playerInfo.remainingPlays - 1);
-
-      // Respond with the item
-      return res.status(200).json({ item: randomItem });
-    } else {
-      return res.status(400).json({ message: "No plays remaining" });
-    }
-  } catch (error) {
-    return res.status(500).json({ message: error.message });
-  }
-};
-
-export const getMoreAttempts = async (req, res) => {
-  const { userId, method } = req.body; // method can be "friendRequest" or "facebookShare"
+// Controller for handling the shake action
+export const handleShakeAction = async (req, res) => {
+  const { playerId, item } = req.body;  // Get playerId and item from the request
 
   try {
-    const player = new Player(userId);
-    const playerInfo = await player.getPlayerInfo();
+    // Step 1: Fetch the player document using FirebaseService
+    const playerData = await firebaseService.getPlayer(playerId);  // Get player data
+    const inventoryRef = playerData.inventory;  // This is a DocumentReference object
 
-    let additionalPlays = 0;
-    if (method === "facebookShare") {
-      additionalPlays = 1; // Add 1 play for Facebook share
-    } else if (method === "friendRequest") {
-      additionalPlays = 2; // Add 2 plays for friend requests
+    // Step 2: Fetch the player's inventory document
+    const inventorySnap = await getDoc(inventoryRef);  // Fetch the inventory document
+
+    if (!inventorySnap.exists()) {
+      return res.status(404).json({ message: 'Inventory not found for player' });
     }
 
-    await player.updateRemainingPlays(playerInfo.remainingPlays + additionalPlays);
+    const inventoryData = inventorySnap.data();
+    const updatedItemAmount = (inventoryData.items[item]?.amount || 0) + 1;
 
-    return res.status(200).json({ message: `You received ${additionalPlays} extra plays!` });
+    // Step 3: Update the player's plays and inventory
+    await firebaseService.updatePlayer(
+      playerId,
+      playerData.plays - 1,   // Reduce plays by 1
+      inventoryRef.id,        // Use the correct inventory document reference
+      item,
+      updatedItemAmount
+    );
+
+    // Step 4: Respond with success and updated player data
+    return res.status(200).json({
+      message: 'Shake successful',
+      remainingPlays: playerData.plays - 1,
+      updatedInventory: {
+        [item]: { amount: updatedItemAmount }
+      }
+    });
+
   } catch (error) {
+    console.error('Error handling shake:', error.message);
     return res.status(500).json({ message: error.message });
   }
 };

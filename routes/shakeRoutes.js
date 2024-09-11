@@ -1,10 +1,10 @@
-// routes/shakeRoutes.js
+// src/routes/shakeRoutes.js
 import { Router } from 'express';
-import { startShake, getMoreAttempts } from '../controllers/shakeControllers.js';
+import { handleShakeAction } from '../controllers/shakeControllers.js';  // Import the controller
 
 const router = Router();
 
-router.post('/start', startShake);
-router.post('/get-more-attempts', getMoreAttempts);
+// POST request to /api/shake to perform shake action
+router.post('/', handleShakeAction);  // Call the controller directly
 
 export default router;
