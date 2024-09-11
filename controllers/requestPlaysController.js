@@ -1,27 +1,34 @@
-import { collection, doc, getDoc, addDoc } from "firebase/firestore";
+import { collection, doc, getDoc, addDoc, query, where, getDocs } from "firebase/firestore";
 import FirebaseService from "../services/FirebaseService.js";  // Import Firebase service
 
 const firebaseService = new FirebaseService();  // Initialize FirebaseService
-// Controller for Player A to request plays from Player B
+
+// Controller for Player A to request plays from Player B using Player B's username
 export const requestPlays = async (req, res) => {
-  const { playerAId, playerBId } = req.body;  // Get Player A (requester) and Player B (responder) IDs
+  const { playerAId, playerBUsername } = req.body;  // Get Player A (requester) ID and Player B (responder) username
 
   try {
-    // Step 1: Fetch Player B's data to ensure they exist
-    const playerBRef = doc(firebaseService.firestore, 'players', playerBId);
-    const playerBSnap = await getDoc(playerBRef);
+    // Step 1: Search for Player B by username
+    const playersCollection = collection(firebaseService.firestore, 'players');
+    const playerBQuery = query(playersCollection, where('username', '==', playerBUsername));
+    const playerBQuerySnapshot = await getDocs(playerBQuery);
 
-    if (!playerBSnap.exists()) {
+    if (playerBQuerySnapshot.empty) {
       return res.status(404).json({ message: "Player B not found" });
     }
 
-    // Step 2: Create a request notification for Player B
+    // Assuming username is unique, get the first matching player
+    const playerBDoc = playerBQuerySnapshot.docs[0];
+    const playerBData = playerBDoc.data();
+    const playerBId = playerBDoc.id;  // Extract Player B's ID
+
+    // Step 2: Create a notification for Player B
     const notificationsCollection = collection(firebaseService.firestore, 'notifications');
-    const notificationMessage = `Player A has requested plays from you. Do you accept?`;
+    const notificationMessage = `Player A has requested plays from youdddsa. Do you accept?`;
 
     await addDoc(notificationsCollection, {
       recipientId: playerBId,  // Send the notification to Player B
-      senderId: playerAId,  // Player A is the requester
+      senderId: playerAId,     // Player A is the requester
       message: notificationMessage,
       requestType: 'play_request',
       timestamp: new Date(),

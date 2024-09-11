@@ -29,17 +29,20 @@ export const handleExchangeAction = async (req, res) => {
 
     // Step 3: Deduct the exchanged items from the inventory
     const updatedInventory = {
-      cat: inventoryData.items.cat - cat,
-      panda: inventoryData.items.panda - panda,
-      rabbit: inventoryData.items.rabbit - rabbit
-    };
+        cat: Number(inventoryData.items.cat.amount || 0) - Number(cat || 0),
+        panda: Number(inventoryData.items.panda.amount || 0) - Number(panda || 0),
+        rabbit: Number(inventoryData.items.rabbit.amount || 0) - Number(rabbit || 0),
+      };
+      
+      
 
     // Update the inventory in Firestore
     await updateDoc(inventoryRef, {
-      "items.cat": updatedInventory.cat,
-      "items.panda": updatedInventory.panda,
-      "items.rabbit": updatedInventory.rabbit
-    });
+        "items.cat.amount": updatedInventory.cat ,
+        "items.panda.amount": updatedInventory.panda,
+        "items.rabbit.amount": updatedInventory.rabbit
+      });
+      
 
     // Step 4: Generate a voucher (For simplicity, we return a mock voucher code here)
     const voucherCode = `VOUCHER-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
